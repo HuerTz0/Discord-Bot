@@ -61,15 +61,28 @@ async def on_message(message):
         user_question = message.content[5:]
 
         try:
-            # Send the prompt over to Gemini
+            # We build a custom rulebook telling Gemini about your friends and their IDs
+            reference_rules = (
+                "You are a fun Discord bot. You have access to a special mapping of friends' names and their keywords.\n"
+                "If the user's question mentions any of these keywords, you MUST include their exact Discord ping tag "
+                "character-for-character in your response so they get tagged:\n"
+                "- Name: Cooper, Keywords 'peace', 'fat', or 'shannon' -> Ping <@576517577527001150>\n"
+                "- Name: Soren, Keywords 'men', 'loli', or 'abused' -> Ping <@527278447894986753>\n"
+                "- Name: Omar, Keywords 'shower', 'willpower', or 'prime' -> Ping <@608428956625928198>\n"
+                "- Name: Arman, Keywords 'creative', 'crashout', 'feisty', 'cute', or 'devil' -> Ping <@719977618207801414>\n"
+                "- Name: Shouvik, Keywords 'jail', 'fence', or 'weed' -> Ping <@501927322396655661>\n\n"
+                "Keep your answers creative, direct, and under 3 sentences."
+            )
+
+            # Send the prompt to Gemini with our custom rules loaded in
             response = ai_client.models.generate_content(
                 model='gemini-3.5-flash',
                 contents=user_question,
-		config= {
-			'max_output_tokens': 1000,
-			'system_instruction': "You are a concise Discord bot that responds as a 19 year old boy raised in Wichita Kansas. Keep all answers brief and under 3 sentences."
-            	}
-	    )
+                config={
+                    'max_output_tokens': 1000,  
+                    'system_instruction': reference_rules  # Gemini now reads the rules before responding!
+                }
+            )
             
             bot_reply = response.text
             
@@ -77,7 +90,6 @@ async def on_message(message):
             if len(bot_reply) <= 2000:
                 await message.channel.send(bot_reply)
             else:
-                # If it's too long, safely slice it into 2000-character blocks
                 for i in range(0, len(bot_reply), 2000):
                     await message.channel.send(bot_reply[i:i+2000])
             
@@ -85,17 +97,19 @@ async def on_message(message):
             print(f"Error encountered: {e}")
             await message.channel.send("Sorry, my brain hit a snag trying to process that response!")
             return
+
     # -----------------------------------------------------------------
-    # COMMAND 3: VV Refrences
+    # COMMAND 3: VV References
     # -----------------------------------------------------------------
-# Splitting turns "hi there bot" into ['hi', 'there', 'bot']
-# Splitting turns "hi there bot" into ['hi', 'there', 'bot']
+    # Splitting turns sentences into lists of words for structural processing
     words = text.split()
 
     VV_references = {
         "<@576517577527001150>": ["peace", "fat", "shannon"],
-        "<@52727844789486753>": ["men", "loli", "abused"],
-        "<@608428956625928198>": ["shower", "willpower", "prime"]
+        "<@527278447894986753>": ["men", "loli", "abused"],
+        "<@608428956625928198>": ["shower", "willpower", "prime"],
+        "<@719977618207801414>": ["creative", "crashout", "feisty", "cute", "devil"],
+        "<@501927322396655661>": ["jail", "fence", "weed"]
     }
 
     pings_to_send = set()
@@ -107,5 +121,6 @@ async def on_message(message):
 
     for friend_ping in pings_to_send:
         await message.channel.send(f"{friend_ping} reference!")          
+
 # Launch the bot
 client.run(os.getenv('DISCORD_TOKEN'))
