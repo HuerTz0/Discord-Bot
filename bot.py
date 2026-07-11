@@ -23,6 +23,9 @@ COOLDOWN_SECONDS = 5.0
 @client.event
 async def on_ready():
     print(f"Successfully booted! We have logged in as {client.user}")
+    boot_channel = client.get_channel(881329513391345725)
+    if boot_channel:
+        await boot_channel.send("I am alive")
 
 @client.event
 async def on_message(message):
