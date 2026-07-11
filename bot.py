@@ -89,21 +89,23 @@ async def on_message(message):
     # COMMAND 3: VV Refrences
     # -----------------------------------------------------------------
 # Splitting turns "hi there bot" into ['hi', 'there', 'bot']
+# Splitting turns "hi there bot" into ['hi', 'there', 'bot']
     words = text.split()
 
     VV_references = {
         "<@576517577527001150>": ["peace", "fat", "shannon"],
-        "<@527278447894986753>": ["men", "loli", "abused"],
+        "<@52727844789486753>": ["men", "loli", "abused"],
         "<@608428956625928198>": ["shower", "willpower", "prime"]
     }
 
+    pings_to_send = set()
+
     for word in words:
-        # FIXED: Changed friend_triggers to VV_references
         for friend_name, keywords in VV_references.items():
             if word in keywords:
-                # Found a match! Summon them and stop looking
-                await message.channel.send(f"{friend_name} reference!")
-                return  # Exits the function so it doesn't spam if multiple words match
+                pings_to_send.add(friend_name)
 
+    for friend_ping in pings_to_send:
+        await message.channel.send(f"{friend_ping} reference!")          
 # Launch the bot
 client.run(os.getenv('DISCORD_TOKEN'))
