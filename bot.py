@@ -1,49 +1,109 @@
-# bot.py
 import os
 import time
 import discord
-
 from dotenv import load_dotenv
+from google import genai  # Google's Gen AI SDK
 
+# Load your secret keys from the .env file
 load_dotenv()
 
-TOKEN = os.getenv('DISCORD_TOKEN')
+# Initialize Discord Developer Intents and Client
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
 
-intents = discord.Intents.all()
-client = discord.Client(command_prefix='!', intents=intents)
+# Initialize the Gemini Client
+# (It automatically grabs GEMINI_API_KEY from your .env file)
+ai_client = genai.Client()
 
-@client.event
-async def on_ready():
-  print('We have logged in as {0.user}'.format(client))
-#Test Code
+# Cooldown tracking memory
 user_cooldowns = {}
 COOLDOWN_SECONDS = 5.0
 
 @client.event
+async def on_ready():
+    print(f"Successfully booted! We have logged in as {client.user}")
+
+@client.event
 async def on_message(message):
-    # Ignore the bot's own messages
+    # 1. Safety Check: Make sure the bot never talks to itself
     if message.author == client.user:
         return
 
+    # 2. Convert text to lowercase for seamless case-insensitive matching
     text = message.content.lower()
 
+    # -----------------------------------------------------------------
+    # COMMAND 1: Case-Insensitive "Hi" with a 5-Second Cooldown
+    # -----------------------------------------------------------------
     if text.startswith('hi'):
         user_id = message.author.id
         current_time = time.time()
 
-        # Check if the user is in our memory AND if 5 seconds haven't passed yet
+        # Check if the user is spamming
         if user_id in user_cooldowns:
             time_passed = current_time - user_cooldowns[user_id]
             if time_passed < COOLDOWN_SECONDS:
-                # Math to figure out exactly how long they have left
                 time_left = round(COOLDOWN_SECONDS - time_passed, 1)
                 await message.channel.send(f"Whoa there, <@{user_id}>! Please wait {time_left} more seconds.")
-                return # Stop the code here so they don't get a 'Hello'
+                return  # Stop execution here
 
-        # If they aren't on cooldown, update their timestamp in the memory
+        # Pass check: update memory and reply
         user_cooldowns[user_id] = current_time
+        await message.channel.send('Hello!')
+        return
 
-        # Finally, send the actual response!
-        await message.channel.send('Hello')
+    # -----------------------------------------------------------------
+    # COMMAND 2: Gemini "!ask" with 2000-Character Auto-Chunking
+    # -----------------------------------------------------------------
+    if text.startswith('!ask '):
+        # Extract the question by slicing off the "!ask " prefix
+        user_question = message.content[5:]
 
-client.run(TOKEN)
+        try:
+            # Send the prompt over to Gemini
+            response = ai_client.models.generate_content(
+                model='gemini-3.5-flash',
+                contents=user_question,
+		config= {
+			'max_output_tokens': 1000,
+			'system_instruction': "You are a concise Discord bot that responds as a 19 year old boy raised in Wichita Kansas. Keep all answers brief and under 3 sentences."
+            	}
+	    )
+            
+            bot_reply = response.text
+            
+            # If the response fits in one Discord message, send it normally
+            if len(bot_reply) <= 2000:
+                await message.channel.send(bot_reply)
+            else:
+                # If it's too long, safely slice it into 2000-character blocks
+                for i in range(0, len(bot_reply), 2000):
+                    await message.channel.send(bot_reply[i:i+2000])
+            
+        except Exception as e:
+            print(f"Error encountered: {e}")
+            await message.channel.send("Sorry, my brain hit a snag trying to process that response!")
+            return
+    # -----------------------------------------------------------------
+    # COMMAND 3: VV Refrences
+    # -----------------------------------------------------------------
+# Splitting turns "hi there bot" into ['hi', 'there', 'bot']
+    words = text.split()
+
+    VV_references = {
+        "<@576517577527001150>": ["peace", "fat", "shannon"],
+        "<@527278447894986753>": ["men", "loli", "abused"],
+        "<@608428956625928198>": ["shower", "willpower", "prime"]
+    }
+
+    for word in words:
+        # FIXED: Changed friend_triggers to VV_references
+        for friend_name, keywords in VV_references.items():
+            if word in keywords:
+                # Found a match! Summon them and stop looking
+                await message.channel.send(f"{friend_name} reference!")
+                return  # Exits the function so it doesn't spam if multiple words match
+
+# Launch the bot
+client.run(os.getenv('DISCORD_TOKEN'))
