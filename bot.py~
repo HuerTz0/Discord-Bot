@@ -85,7 +85,7 @@ async def on_message(message):
         # Loop through and unpack the nested JSON structure
         for name, info in references.items():
             keywords_list = ", ".join(info["keywords"])
-            display_text += f"• **{name}** : `{keywords_list}`\n"
+            display_text += f"• **{name}** (: `{keywords_list}`\n"
         
         # Send everything at once!
         await message.channel.send(display_text)
