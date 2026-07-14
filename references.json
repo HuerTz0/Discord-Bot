@@ -46,7 +46,27 @@
     "Jalil": {
         "ping": "<@293394018958704642>",
         "keywords": [
+            "ibg",
             "time"
+        ]
+    },
+    "VV": {
+        "ping": "<@1525276268893966419>",
+        "keywords": [
+            "monologues"
+        ]
+    },
+    "Mike": {
+        "ping": "<@603217327986704384>",
+        "keywords": [
+            "jamie",
+            "binary"
+        ]
+    },
+    "Devin": {
+        "ping": "<@478334804178239488>",
+        "keywords": [
+            "hard drive"
         ]
     }
 }
