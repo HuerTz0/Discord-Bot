@@ -135,7 +135,7 @@ async def on_message(message):
                 model='gemini-3.5-flash',
                 contents=user_question,
                 config={
-                    'max_output_tokens': 1000,  
+                    'max_output_tokens': 2000,  
                     'system_instruction': dynamic_rules  # Gemini now reads the rules before responding!
                 }
             )

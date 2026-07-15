@@ -69,7 +69,7 @@ async def on_message(message):
         # Pass check: update memory and reply
         user_cooldowns[user_id] = current_time
         await message.channel.send('Hello!')
-        return
+        
 
     #------------------------------------------------------------------
     #NEW Command:!display
